@@ -1,7 +1,7 @@
 alter table profiles     enable row level security;
 alter table enrollments  enable row level security;
 alter table institutions enable row level security;
-alter table session      enable row level security;
+alter table exam_session enable row level security;
 alter table answers      enable row level security;
 alter table questions    enable row level security;
 
@@ -22,7 +22,7 @@ using (
 );
 
 create policy student_select_own_sessions
-on session for select
+on exam_session for select
 using (
     student_id in (
         select id from profiles where auth_users_id = auth.uid()
@@ -30,7 +30,7 @@ using (
 );
 
 create policy student_insert_own_sessions
-on session for insert
+on exam_session for insert
 with check (
     student_id in (
         select id from profiles where auth_users_id = auth.uid()
@@ -41,7 +41,7 @@ create policy student_select_own_answers
 on answers for select
 using (
     session_id in (
-        select id from session
+        select id from exam_session
         where student_id in (
             select id from profiles where auth_users_id = auth.uid()
         )
@@ -61,7 +61,7 @@ using (
 );
 
 create policy school_admin_select_sessions
-on session for select
+on exam_session for select
 using (
     student_id in (
         select e.student_id from enrollments e
@@ -75,7 +75,7 @@ create policy school_admin_select_answers
 on answers for select
 using (
     session_id in (
-        select s.id from session s
+        select s.id from exam_session s
         inner join enrollments e on s.student_id = e.student_id
         inner join institutions i on e.school_id = i.id
         inner join profiles p on i.admin_id = p.id
@@ -108,7 +108,7 @@ using (
 );
 
 create policy global_admin_all_sessions
-on session for all
+on exam_session for all
 using (
     (select user_role from profiles where auth_users_id = auth.uid()) = 'global_admin'
 );
