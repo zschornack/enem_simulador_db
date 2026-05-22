@@ -38,7 +38,7 @@ create table enrollments (
   constraint uq_enrollment unique (student_id, school_id)
 );
 
-create table session (
+create table exam_session (
   id              uuid        primary key default gen_random_uuid(),
   student_id      uuid        not null references profiles(id) on delete cascade,
   session_status  text        not null default 'in_progress' check (session_status in ('in_progress', 'completed')),
