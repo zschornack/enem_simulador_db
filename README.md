@@ -1,7 +1,5 @@
 # ENEM_simulator_db
 
-## EN
-
 Database project containing Row Level Security (RLS), schemas and triggers for an ENEM mock exam platform.
 
 The main goal of the project is to provide a secure, organized, and scalable database structure for managing:
@@ -19,9 +17,6 @@ The main goal of the project is to provide a secure, organized, and scalable dat
 * SQL
 * PL/pgSQL
 
-
----
-
 ### Features
 
 * Row Level Security (RLS)
@@ -31,9 +26,6 @@ The main goal of the project is to provide a secure, organized, and scalable dat
 * Reusable procedures and functions
 * Audit and change tracking
 * Structure prepared for API and web application integration
-
-
----
 
 ### Project Structure
 
@@ -48,18 +40,12 @@ enem_simulador_db/
 ├── migrations/
 └── README.md
 
-
----
-
 ### Project Goals
 
 * Advanced relational database modeling
 * PostgreSQL best practices
 * Row-level security implementation
 * Real-world production environment simulation
-
-
----
 
 ## License
 
