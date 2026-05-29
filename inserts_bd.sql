@@ -312,8 +312,8 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000022',4,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000023',2,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000024',2,true),
-(s_gabriel_1,'f6000000-0000-0000-0000-000000000025',2,false), 
-(s_gabriel_1,'f6000000-0000-0000-0000-000000000026',2,false); 
+(s_gabriel_1,'f6000000-0000-0000-0000-000000000025',2,true), 
+(s_gabriel_1,'f6000000-0000-0000-0000-000000000026',2,false), 
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000027',2,false); 
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
@@ -343,7 +343,7 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000024',1,false),
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000025',3,false), 
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000026',1,false), 
-(s_gabriel_2,'f6000000-0000-0000-0000-000000000027',2,true);
+(s_gabriel_2,'f6000000-0000-0000-0000-000000000027',3,true);
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000001',1,true),
@@ -372,7 +372,7 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000024',1,false), 
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000025',3,false), 
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000026',1,false), 
-(s_gabriel_3,'f6000000-0000-0000-0000-000000000027',2,true);
+(s_gabriel_3,'f6000000-0000-0000-0000-000000000027',2,false);
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_gabriel_4,'f6000000-0000-0000-0000-000000000001',1,true),
