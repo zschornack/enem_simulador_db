@@ -1,21 +1,8 @@
--- =============================================================
--- POPULATE BD2 - Avaliação Banco de Dados Parte 2
--- Ordem: auth_user → profiles (trigger) → update profiles
---        → institutions → questions → enrollments
---        → exam_session → answers
--- =============================================================
-
-
--- =============================================================
--- 1. AUTH_USER  (o trigger trg_create_profile cria o profile
---    automaticamente com full_name = 'novo usuário' e role = 'student')
--- =============================================================
-
 INSERT INTO auth_user (id, email, password_hash) VALUES
   -- admins
   ('a1000000-0000-0000-0000-000000000001', 'martim.dietterle@alphas.edu.br',  crypt('Alphas@2025!',  gen_salt('bf'))),
   ('a1000000-0000-0000-0000-000000000002', 'andrei.carniel@instituto.edu.br', crypt('Betas@2025!',   gen_salt('bf'))),
-  -- global admin
+  -- amin global
   ('a1000000-0000-0000-0000-000000000003', 'admin@plataforma.com',            crypt('Global@2025!',  gen_salt('bf'))),
   -- alunos Escola dos Alphas (6 alunos)
   ('b2000000-0000-0000-0000-000000000001', 'gabriel.souza@alphas.edu.br',     crypt('Aluno@001',     gen_salt('bf'))),
@@ -34,7 +21,7 @@ INSERT INTO auth_user (id, email, password_hash) VALUES
   ('c3000000-0000-0000-0000-000000000006', 'fernanda.dias@instituto.edu.br',  crypt('Aluno@012',     gen_salt('bf')));
 
 
--- 2. UPDATE PROFILES  (corrige nome e role dos perfis criados automaticamente pelo trigger)
+-- 2. UPDATE PROFILES  (é pra corrigir nome e role dos perfis criados automaticamente pelo trigger)
 
 -- Admin Escola dos Alphas
 UPDATE profiles SET full_name = 'Martim Dietterle', user_role = 'school_admin'
@@ -65,8 +52,7 @@ UPDATE profiles SET full_name = 'Bruno Cardoso'   WHERE auth_user_id = 'c3000000
 UPDATE profiles SET full_name = 'Fernanda Dias'   WHERE auth_user_id = 'c3000000-0000-0000-0000-000000000006';
 
 
--- 3. INSTITUTIONS  (admin_id = id do profile do school_admin)
---    O trigger valida que o profile referenciado tem role='school_admin'
+-- 3. INSTITUTIONS
 
 INSERT INTO institutions (id, name, cnpj, admin_id) VALUES
   (
@@ -82,19 +68,18 @@ INSERT INTO institutions (id, name, cnpj, admin_id) VALUES
     (SELECT id FROM profiles WHERE auth_user_id = 'a1000000-0000-0000-0000-000000000002')
   );
 
--- 4. QUESTIONS  (30 questões; internal_number 45 obrigatório)
---    statement e alternatives em JSONB / FEITAS COM IA
+-- 4. QUESTIONS  // questoes feitas com IA
 
 INSERT INTO questions (id, internal_number, statement, alternatives, correct_answer) VALUES
 
--- Q45 (obrigatória - tarefa 4)
+-- Q45 essa aqui vai ser feita com o gabarito errado de proposito
 ('f6000000-0000-0000-0000-000000000045',
  45,
  '{"texto": "Qual é o resultado de SELECT COUNT(*) FROM tabela WHERE 1=0?"}',
  '{"1": "Erro de sintaxe", "2": "NULL", "3": "0", "4": "1", "5": "Depende do SGBD"}',
  3),   -- gabarito correto = alternativa 3
 
--- demais questões (1-29 e 46-50 para ter volume suficiente)
+-- demais questões
 ('f6000000-0000-0000-0000-000000000001',  1, '{"texto": "Qual comando SQL é usado para recuperar dados?"}',               '{"1":"SELECT","2":"INSERT","3":"UPDATE","4":"DELETE"}', 1),
 ('f6000000-0000-0000-0000-000000000002',  2, '{"texto": "Qual cláusula filtra resultados em SQL?"}',                       '{"1":"ORDER BY","2":"GROUP BY","3":"WHERE","4":"HAVING"}', 3),
 ('f6000000-0000-0000-0000-000000000003',  3, '{"texto": "Qual tipo de JOIN retorna apenas registros com correspondência?"}','{"1":"LEFT JOIN","2":"RIGHT JOIN","3":"FULL JOIN","4":"INNER JOIN"}', 4),
@@ -126,9 +111,9 @@ INSERT INTO questions (id, internal_number, statement, alternatives, correct_ans
 ('f6000000-0000-0000-0000-000000000029', 29, '{"texto": "O que faz o ON DELETE CASCADE?"}',                               '{"1":"Impede exclusão do pai","2":"Exclui filhos quando o pai é excluído","3":"Atualiza filhos","4":"Define valor padrão"}', 2),
 ('f6000000-0000-0000-0000-000000000030', 30, '{"texto": "Qual é a diferença entre CHAR e VARCHAR?"}',                     '{"1":"Sem diferença","2":"CHAR tem tamanho fixo, VARCHAR variável","3":"VARCHAR é mais lento","4":"CHAR aceita nulos, VARCHAR não"}', 2);
 
--- 5. ENROLLMENTS  (matricular alunos às escolas)
+-- 5. ENROLLMENTS 
 
--- Alunos da Escola dos Alphas (CNPJ 12.345.678/0001-99)
+-- Alunos  Alphas
 INSERT INTO enrollments (student_id, school_id)
 SELECT p.id, 'e5000000-0000-0000-0000-000000000001'
 FROM profiles p
@@ -142,7 +127,7 @@ WHERE a.email IN (
   'julia.lima@alphas.edu.br'
 );
 
--- Alunos do Instituto só para Betas
+-- Alunos Betas
 INSERT INTO enrollments (student_id, school_id)
 SELECT p.id, 'e5000000-0000-0000-0000-000000000002'
 FROM profiles p
@@ -153,26 +138,14 @@ WHERE a.email IN (
   'thiago.nunes@instituto.edu.br',
   'amanda.barbosa@instituto.edu.br',
   'bruno.cardoso@instituto.edu.br',
-  'fernanda.dias@instituto.edu.br'  -- matriculada mas nunca iniciou sessão (tarefa 3)
+  'fernanda.dias@instituto.edu.br' 
 );
 
-
--- =============================================================
--- 6. EXAM_SESSION  +  ANSWERS
---    Cada aluno tem sessões com questões suficientes para atingir
---    mínimo de 100 questões no histórico (tarefa 7).
---    Fernanda Dias NÃO tem sessão (tarefa 3).
---    Questão 45 respondida pelos alunos da Escola dos Alphas (tarefa 4).
--- =============================================================
-
--- -------------------------------------------------------
--- helper: insere sessão completada e retorna o id
--- Usamos DO $$ blocks para poder usar variáveis
--- -------------------------------------------------------
+-- 6. EXAM_SESSION  +  ANSWERS   /  necessario para as questoes que o martin pediu: Cada aluno tem sessões com questões suficientes para atingir mínimo de 100 questões no histórico, Fernanda Dias NÃO tem sessão, questão 45 respondida pelos alunos da Escola dos Alphas
 
 DO $$
 DECLARE
-  -- profile ids (resolvidos via auth_user_id)
+  -- profile ids
   p_gabriel   uuid := (SELECT id FROM profiles WHERE auth_user_id = 'b2000000-0000-0000-0000-000000000001');
   p_isabela   uuid := (SELECT id FROM profiles WHERE auth_user_id = 'b2000000-0000-0000-0000-000000000002');
   p_lucas     uuid := (SELECT id FROM profiles WHERE auth_user_id = 'b2000000-0000-0000-0000-000000000003');
@@ -185,8 +158,8 @@ DECLARE
   p_amanda    uuid := (SELECT id FROM profiles WHERE auth_user_id = 'c3000000-0000-0000-0000-000000000004');
   p_bruno     uuid := (SELECT id FROM profiles WHERE auth_user_id = 'c3000000-0000-0000-0000-000000000005');
 
-  -- session ids (fixos para facilitar referência)
-  -- Escola dos Alphas - cada aluno tem 4 sessões de ~27 questões = 108 questões total
+  -- session ids 
+  -- Alphas - cada aluno tem 4 sessões 
   s_gabriel_1 uuid := 'd7000001-0000-0000-0000-000000000001';
   s_gabriel_2 uuid := 'd7000001-0000-0000-0000-000000000002';
   s_gabriel_3 uuid := 'd7000001-0000-0000-0000-000000000003';
@@ -217,7 +190,7 @@ DECLARE
   s_julia_3   uuid := 'd7000006-0000-0000-0000-000000000003';
   s_julia_4   uuid := 'd7000006-0000-0000-0000-000000000004';
 
-  -- Instituto só para Betas - cada aluno 4 sessões
+  --  Betas - cada aluno 4 sessões
   s_rafael_1  uuid := 'd7000007-0000-0000-0000-000000000001';
   s_rafael_2  uuid := 'd7000007-0000-0000-0000-000000000002';
   s_rafael_3  uuid := 'd7000007-0000-0000-0000-000000000003';
@@ -245,106 +218,76 @@ DECLARE
 
 BEGIN
 
--- ==============================================================
--- EXAM_SESSIONS
--- Cada sessão: 27 questões (total_questions)
--- Sessão 1 do aluno: inclui questão 45 (para Escola dos Alphas)
--- total_correct calculado por aluno abaixo
--- ==============================================================
-
--- GABRIEL SOUZA  (acerta ~85% → ~92 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_gabriel_1, p_gabriel, 'completed', 27, 24, now() - interval '10 days'),
   (s_gabriel_2, p_gabriel, 'completed', 27, 23, now() - interval '7 days'),
   (s_gabriel_3, p_gabriel, 'completed', 27, 22, now() - interval '4 days'),
   (s_gabriel_4, p_gabriel, 'completed', 27, 23, now() - interval '1 day');
 
--- ISABELA FERREIRA  (acerta ~75% → ~81 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_isabela_1, p_isabela, 'completed', 27, 20, now() - interval '12 days'),
   (s_isabela_2, p_isabela, 'completed', 27, 21, now() - interval '8 days'),
   (s_isabela_3, p_isabela, 'completed', 27, 20, now() - interval '5 days'),
   (s_isabela_4, p_isabela, 'completed', 27, 20, now() - interval '2 days');
 
--- LUCAS MENDES  (acerta ~90% → ~97 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_lucas_1, p_lucas, 'completed', 27, 25, now() - interval '15 days'),
   (s_lucas_2, p_lucas, 'completed', 27, 24, now() - interval '10 days'),
   (s_lucas_3, p_lucas, 'completed', 27, 24, now() - interval '6 days'),
   (s_lucas_4, p_lucas, 'completed', 27, 24, now() - interval '2 days');
 
--- MARIANA COSTA  (acerta ~70% → ~76 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_mariana_1, p_mariana, 'completed', 27, 19, now() - interval '14 days'),
   (s_mariana_2, p_mariana, 'completed', 27, 19, now() - interval '9 days'),
   (s_mariana_3, p_mariana, 'completed', 27, 19, now() - interval '5 days'),
   (s_mariana_4, p_mariana, 'completed', 27, 19, now() - interval '1 day');
 
--- PEDRO OLIVEIRA  (acerta ~65% → ~70 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_pedro_1, p_pedro, 'completed', 27, 18, now() - interval '20 days'),
   (s_pedro_2, p_pedro, 'completed', 27, 17, now() - interval '13 days'),
   (s_pedro_3, p_pedro, 'completed', 27, 18, now() - interval '7 days'),
   (s_pedro_4, p_pedro, 'completed', 27, 17, now() - interval '2 days');
 
--- JULIA LIMA  (acerta ~80% → ~86 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_julia_1, p_julia, 'completed', 27, 22, now() - interval '11 days'),
   (s_julia_2, p_julia, 'completed', 27, 21, now() - interval '7 days'),
   (s_julia_3, p_julia, 'completed', 27, 22, now() - interval '4 days'),
   (s_julia_4, p_julia, 'completed', 27, 21, now() - interval '1 day');
 
--- RAFAEL ALVES  (acerta ~88% → ~95 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_rafael_1, p_rafael, 'completed', 27, 24, now() - interval '13 days'),
   (s_rafael_2, p_rafael, 'completed', 27, 24, now() - interval '9 days'),
   (s_rafael_3, p_rafael, 'completed', 27, 23, now() - interval '5 days'),
   (s_rafael_4, p_rafael, 'completed', 27, 24, now() - interval '1 day');
 
--- CAMILA ROCHA  (acerta ~72% → ~78 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_camila_1, p_camila, 'completed', 27, 20, now() - interval '16 days'),
   (s_camila_2, p_camila, 'completed', 27, 19, now() - interval '11 days'),
   (s_camila_3, p_camila, 'completed', 27, 20, now() - interval '6 days'),
   (s_camila_4, p_camila, 'completed', 27, 19, now() - interval '2 days');
 
--- THIAGO NUNES  (acerta ~60% → ~65 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_thiago_1, p_thiago, 'completed', 27, 16, now() - interval '18 days'),
   (s_thiago_2, p_thiago, 'completed', 27, 16, now() - interval '12 days'),
   (s_thiago_3, p_thiago, 'completed', 27, 17, now() - interval '6 days'),
   (s_thiago_4, p_thiago, 'completed', 27, 16, now() - interval '2 days');
 
--- AMANDA BARBOSA  (acerta ~82% → ~89 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_amanda_1, p_amanda, 'completed', 27, 22, now() - interval '14 days'),
   (s_amanda_2, p_amanda, 'completed', 27, 22, now() - interval '9 days'),
   (s_amanda_3, p_amanda, 'completed', 27, 23, now() - interval '5 days'),
   (s_amanda_4, p_amanda, 'completed', 27, 22, now() - interval '1 day');
 
--- BRUNO CARDOSO  (acerta ~77% → ~83 acertos em 108)
 INSERT INTO exam_session (id, student_id, session_status, total_questions, total_correct, finished_at) VALUES
   (s_bruno_1, p_bruno, 'completed', 27, 21, now() - interval '17 days'),
   (s_bruno_2, p_bruno, 'completed', 27, 20, now() - interval '11 days'),
   (s_bruno_3, p_bruno, 'completed', 27, 21, now() - interval '5 days'),
   (s_bruno_4, p_bruno, 'completed', 27, 21, now() - interval '1 day');
 
+-- RESPOSTAS
 
--- ==============================================================
--- ANSWERS
--- Estratégia de acertos:
---   is_correct = true para as primeiras N questões de cada sessão
---   (N = total_correct da sessão)
--- ==============================================================
-
--- ============================================================
--- GABRIEL SOUZA
--- Sessão 1 (s_gabriel_1): 27q, 24 acertos | inclui Q45
--- ============================================================
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
--- Q45 na sessão 1 - Gabriel ERRA (alternativa 1, gabarito era 3)
-(s_gabriel_1, 'f6000000-0000-0000-0000-000000000045', 1, false),
--- Q1-Q26 (acerta 24 das 26, erra as 2 últimas)
+
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000001',1,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000002',3,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000003',4,true),
@@ -369,10 +312,10 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000022',4,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000023',2,true),
 (s_gabriel_1,'f6000000-0000-0000-0000-000000000024',2,true),
-(s_gabriel_1,'f6000000-0000-0000-0000-000000000025',2,false), -- erra
-(s_gabriel_1,'f6000000-0000-0000-0000-000000000026',2,false); -- erra
+(s_gabriel_1,'f6000000-0000-0000-0000-000000000025',2,false), 
+(s_gabriel_1,'f6000000-0000-0000-0000-000000000026',2,false); 
+(s_gabriel_1,'f6000000-0000-0000-0000-000000000027',2,false); 
 
--- Sessão 2 (s_gabriel_2): 27q, 23 acertos
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000001',1,true),
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000002',3,true),
@@ -397,12 +340,11 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000021',2,true),
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000022',4,true),
 (s_gabriel_2,'f6000000-0000-0000-0000-000000000023',2,true),
-(s_gabriel_2,'f6000000-0000-0000-0000-000000000024',1,false), -- erra
-(s_gabriel_2,'f6000000-0000-0000-0000-000000000025',3,false), -- erra
-(s_gabriel_2,'f6000000-0000-0000-0000-000000000026',1,false), -- erra
-(s_gabriel_2,'f6000000-0000-0000-0000-000000000027',3,true);
+(s_gabriel_2,'f6000000-0000-0000-0000-000000000024',1,false),
+(s_gabriel_2,'f6000000-0000-0000-0000-000000000025',3,false), 
+(s_gabriel_2,'f6000000-0000-0000-0000-000000000026',1,false), 
+(s_gabriel_2,'f6000000-0000-0000-0000-000000000027',2,true);
 
--- Sessão 3 (s_gabriel_3): 27q, 22 acertos
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000001',1,true),
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000002',3,true),
@@ -426,13 +368,12 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000020',3,true),
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000021',2,true),
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000022',4,true),
-(s_gabriel_3,'f6000000-0000-0000-0000-000000000023',1,false), -- erra
-(s_gabriel_3,'f6000000-0000-0000-0000-000000000024',1,false), -- erra
-(s_gabriel_3,'f6000000-0000-0000-0000-000000000025',3,false), -- erra
-(s_gabriel_3,'f6000000-0000-0000-0000-000000000026',1,false), -- erra
+(s_gabriel_3,'f6000000-0000-0000-0000-000000000023',1,false), 
+(s_gabriel_3,'f6000000-0000-0000-0000-000000000024',1,false), 
+(s_gabriel_3,'f6000000-0000-0000-0000-000000000025',3,false), 
+(s_gabriel_3,'f6000000-0000-0000-0000-000000000026',1,false), 
 (s_gabriel_3,'f6000000-0000-0000-0000-000000000027',2,true);
 
--- Sessão 4 (s_gabriel_4): 27q, 23 acertos
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_gabriel_4,'f6000000-0000-0000-0000-000000000001',1,true),
 (s_gabriel_4,'f6000000-0000-0000-0000-000000000002',3,true),
@@ -462,10 +403,6 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_gabriel_4,'f6000000-0000-0000-0000-000000000026',1,false), -- erra
 (s_gabriel_4,'f6000000-0000-0000-0000-000000000027',3,true);
 
--- ============================================================
--- ISABELA FERREIRA
--- Sessão 1: inclui Q45 (ERRA - escolhe alt 2, gabarito 3)
--- ============================================================
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_isabela_1,'f6000000-0000-0000-0000-000000000045',2,false),
 (s_isabela_1,'f6000000-0000-0000-0000-000000000001',1,true),
@@ -493,7 +430,7 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_isabela_1,'f6000000-0000-0000-0000-000000000023',3,false), -- erra
 (s_isabela_1,'f6000000-0000-0000-0000-000000000024',3,false), -- erra
 (s_isabela_1,'f6000000-0000-0000-0000-000000000025',3,false), -- erra
-(s_isabela_1,'f6000000-0000-0000-0000-000000000026',4,false); -- erra (20 acertos de 27)
+(s_isabela_1,'f6000000-0000-0000-0000-000000000026',4,false); -- erra 
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_isabela_2,'f6000000-0000-0000-0000-000000000001',1,true),
@@ -522,7 +459,7 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_isabela_2,'f6000000-0000-0000-0000-000000000024',3,false), -- erra
 (s_isabela_2,'f6000000-0000-0000-0000-000000000025',4,false), -- erra
 (s_isabela_2,'f6000000-0000-0000-0000-000000000026',4,false), -- erra
-(s_isabela_2,'f6000000-0000-0000-0000-000000000027',3,true);  -- 21 acertos
+(s_isabela_2,'f6000000-0000-0000-0000-000000000027',3,true);  -- ERRA
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_isabela_3,'f6000000-0000-0000-0000-000000000001',1,true),
@@ -551,7 +488,7 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_isabela_3,'f6000000-0000-0000-0000-000000000024',3,false), -- erra
 (s_isabela_3,'f6000000-0000-0000-0000-000000000025',4,false), -- erra
 (s_isabela_3,'f6000000-0000-0000-0000-000000000026',4,false), -- erra
-(s_isabela_3,'f6000000-0000-0000-0000-000000000027',4,false); -- erra (20 acertos)
+(s_isabela_3,'f6000000-0000-0000-0000-000000000027',4,false); -- erra 
 
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
 (s_isabela_4,'f6000000-0000-0000-0000-000000000001',1,true),
@@ -580,14 +517,10 @@ INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) 
 (s_isabela_4,'f6000000-0000-0000-0000-000000000024',3,false), -- erra
 (s_isabela_4,'f6000000-0000-0000-0000-000000000025',4,false), -- erra
 (s_isabela_4,'f6000000-0000-0000-0000-000000000026',4,false), -- erra
-(s_isabela_4,'f6000000-0000-0000-0000-000000000027',4,false); -- erra (20 acertos)
+(s_isabela_4,'f6000000-0000-0000-0000-000000000027',4,false); -- erra 
 
--- ============================================================
--- LUCAS MENDES
--- Sessão 1: inclui Q45 (ACERTA - escolhe alt 3)
--- ============================================================
 INSERT INTO answers (session_id, question_id, selected_alternative, is_correct) VALUES
-(s_lucas_1,'f6000000-0000-0000-0000-000000000045',3,true), -- acerta Q45!
+(s_lucas_1,'f6000000-0000-0000-0000-000000000045',3,true), 
 (s_lucas_1,'f6000000-0000-0000-0000-000000000001',1,true),
 (s_lucas_1,'f6000000-0000-0000-0000-000000000002',3,true),
 (s_lucas_1,'f6000000-0000-0000-0000-000000000003',4,true),
