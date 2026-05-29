@@ -13,32 +13,14 @@ The main goal of the project is to provide a secure, organized, and scalable dat
 
 ### Technologies Used
 
-* PostgreSQL
-* SQL
 * PL/pgSQL
 
 ### Features
 
 * Row Level Security (RLS)
 * User permission control
-* Logical separation using schemas
 * Automatic triggers
 * Reusable procedures and functions
-* Audit and change tracking
-* Structure prepared for API and web application integration
-
-### Project Structure
-
-enem_simulador_db/
-│
-├── schemas/
-├── tables/
-├── functions/
-├── procedures/
-├── triggers/
-├── seeds/
-├── migrations/
-└── README.md
 
 ### Project Goals
 
