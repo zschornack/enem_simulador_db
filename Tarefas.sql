@@ -64,6 +64,8 @@ order by taxa_acerto desc;
 
 -- 6)  Escreva uma consulta de auditoria que identifique sessões "concluídas" que possuam inconsistência em qualquer um dos totalizadores. A consulta deve cruzar os dados da sessão com a tabela de respostas e retornar a linha caso o total_questions armazenado seja diferente da contagem real de respostas daquela sessão, OU caso o correct_count armazenado seja diferente da contagem real de respostas corretas (is_correct = true). o Retorno Esperado: O ID da sessão, o total_questions armazenado, a contagem real de respostas, o correct_count armazenado e a contagem real de acertos.
 
+-- NOTA PARA O PROFESSOR: nosso gabarito vs respostas tinha algumas incosistencias, e deixamos tudo 100%. caso queira, da para alterar a resposta de alguma sessao para false/true e ver que o codigo abaixo puxa a inconsistencia. 
+
 select
     es.id as session_id,
     es.total_questions as stored_total_questions,
